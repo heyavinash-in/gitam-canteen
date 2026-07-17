@@ -65,6 +65,21 @@ def init_db():
     cursor.execute("INSERT OR REPLACE INTO config (key, value) VALUES ('google_client_id', '811997218929-tion706h3r0lfo7b2f75m8t33jaaeegc.apps.googleusercontent.com')")
     cursor.execute("INSERT OR REPLACE INTO config (key, value) VALUES ('razorpay_key_id', 'rzp_test_TEXV2FeUmSXt6v')")
     cursor.execute("INSERT OR REPLACE INTO config (key, value) VALUES ('razorpay_key_secret', 'qk8hcrUomfBQCqdDxoP8534H')")
+
+    # Create Menu table for thalis
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS menu (
+            id TEXT PRIMARY KEY,
+            name TEXT,
+            price INTEGER,
+            is_available INTEGER,
+            description TEXT
+        )
+    ''')
+    
+    # Seed default thalis if not present
+    cursor.execute("INSERT OR IGNORE INTO menu (id, name, price, is_available, description) VALUES ('veg', 'Veg Thali', 60, 1, 'Rice, Dal, 2 Veg Sabji, Roti, Salad, Papad, and Sweet.')")
+    cursor.execute("INSERT OR IGNORE INTO menu (id, name, price, is_available, description) VALUES ('nonveg', 'Non-Veg Thali', 80, 1, 'Chicken Curry / Fish Curry, Rice, Dal, Veg Sabji, Salad, and Papad.')")
     
     conn.commit()
     conn.close()
@@ -102,6 +117,9 @@ class CanteenRequestHandler(http.server.BaseHTTPRequestHandler):
         elif self.path.startswith('/api/coupon/status'):
             self.handle_coupon_status()
             return
+        elif self.path == '/api/menu/load':
+            self.handle_load_menu()
+            return
         elif self.path == '/api/admin/stats':
             self.handle_admin_stats()
             return
@@ -136,6 +154,10 @@ class CanteenRequestHandler(http.server.BaseHTTPRequestHandler):
             self.handle_create_order(payload)
         elif self.path == '/api/payment/verify':
             self.handle_verify_payment(payload)
+        elif self.path == '/api/admin/menu/update':
+            self.handle_update_menu(payload)
+        elif self.path == '/api/admin/clear-ledger':
+            self.handle_clear_ledger(payload)
         elif self.path == '/api/attendant/redeem':
             self.handle_attendant_redeem(payload)
         else:
@@ -309,12 +331,22 @@ class CanteenRequestHandler(http.server.BaseHTTPRequestHandler):
     # POST /api/payment/create-order
     def handle_create_order(self, payload):
         thali_type = payload.get('thali_type')
-        if thali_type not in ['Veg Thali', 'Non-Veg Thali']:
-            self.send_error_response(400, "Invalid meal thali type.")
+        
+        conn = sqlite3.connect(DB_FILE)
+        cursor = conn.cursor()
+        cursor.execute("SELECT price, is_available FROM menu WHERE name = ?", (thali_type,))
+        row = cursor.fetchone()
+        conn.close()
+        
+        if not row:
+            self.send_error_response(400, f"Meal thali type '{thali_type}' not found in configuration.")
             return
-
-        price_map = {'Veg Thali': 60, 'Non-Veg Thali': 80}
-        amount_in_rupees = price_map[thali_type]
+            
+        if not row[1]:
+            self.send_error_response(400, f"Meal thali type '{thali_type}' is currently unavailable.")
+            return
+            
+        amount_in_rupees = row[0]
         amount_in_paise = amount_in_rupees * 100
 
         conf = get_config()
@@ -380,8 +412,17 @@ class CanteenRequestHandler(http.server.BaseHTTPRequestHandler):
             self.send_error_response(400, "Missing payment verification parameters.")
             return
 
-        price_map = {'Veg Thali': 60, 'Non-Veg Thali': 80}
-        amount = price_map[thali_type]
+        conn = sqlite3.connect(DB_FILE)
+        cursor = conn.cursor()
+        cursor.execute("SELECT price FROM menu WHERE name = ?", (thali_type,))
+        row = cursor.fetchone()
+        conn.close()
+        
+        if not row:
+            self.send_error_response(400, f"Meal thali type '{thali_type}' not found.")
+            return
+            
+        amount = row[0]
         now_time = datetime.now().strftime("%d-%b-%Y %I:%M %p")
         rand_num = hashlib.sha256(payment_id.encode()).hexdigest()[:4].upper()
         sec_code = f"OK-{'VEG' if thali_type == 'Veg Thali' else 'NVG'}-{rand_num}"
@@ -580,6 +621,64 @@ class CanteenRequestHandler(http.server.BaseHTTPRequestHandler):
             "message": "Voucher successfully redeemed in datastore.",
             "redeemed_at": now_time
         })
+
+    # GET /api/menu/load
+    def handle_load_menu(self):
+        conn = sqlite3.connect(DB_FILE)
+        cursor = conn.cursor()
+        cursor.execute("SELECT id, name, price, is_available, description FROM menu")
+        rows = cursor.fetchall()
+        conn.close()
+        
+        menu = []
+        for r in rows:
+            menu.append({
+                "id": r[0],
+                "name": r[1],
+                "price": r[2],
+                "is_available": bool(r[3]),
+                "description": r[4]
+            })
+        self.send_json_response(menu)
+
+    # POST /api/admin/menu/update
+    def handle_update_menu(self, payload):
+        thali_id = payload.get('id')
+        price = int(payload.get('price', 0))
+        is_available = 1 if payload.get('is_available') else 0
+        description = payload.get('description', '').strip()
+        
+        if not thali_id:
+            self.send_error_response(400, "Missing Thali ID.")
+            return
+            
+        conn = sqlite3.connect(DB_FILE)
+        cursor = conn.cursor()
+        if price > 0 and description:
+            cursor.execute("UPDATE menu SET price = ?, is_available = ?, description = ? WHERE id = ?", (price, is_available, description, thali_id))
+        elif price > 0:
+            cursor.execute("UPDATE menu SET price = ?, is_available = ? WHERE id = ?", (price, is_available, thali_id))
+        else:
+            cursor.execute("UPDATE menu SET is_available = ? WHERE id = ?", (is_available, thali_id))
+        conn.commit()
+        conn.close()
+        
+        self.send_json_response({"status": "success", "message": "Thali configuration updated successfully."})
+
+    # POST /api/admin/clear-ledger
+    def handle_clear_ledger(self, payload):
+        passcode = payload.get('passcode')
+        if passcode != 'Gitam@2008':
+            self.send_error_response(403, "Invalid administrator authorization.")
+            return
+            
+        conn = sqlite3.connect(DB_FILE)
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM transactions")
+        conn.commit()
+        conn.close()
+        
+        self.send_json_response({"status": "success", "message": "Transaction ledger database has been cleared."})
 
 # --- Server Start ---
 if __name__ == '__main__':

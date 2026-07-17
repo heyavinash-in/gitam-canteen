@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=11">
   
   <!-- PWA Support -->
   <link rel="manifest" href="manifest.json">
@@ -116,47 +116,11 @@
 
       <h3 class="section-title">Select Lunch Option</h3>
 
-      <!-- Menu Items Grid -->
-      <div class="menu-grid">
-        <!-- Option 1: Veg Thali -->
-        <div class="menu-card" id="card-veg" data-price="60" data-type="Veg Thali">
-          <div class="card-image-fallback card-veg-fallback">
-            <img src="veg_thali.jpg" alt="Veg Thali">
-            <div class="veg-badge">100% VEG</div>
-          </div>
-          <div class="card-details">
-            <div class="card-title-row">
-              <h4>Veg Thali</h4>
-              <span class="price-tag">₹60</span>
-            </div>
-            <p class="card-desc">Rice, Dal, 2 Veg Sabji, Roti, Salad, Papad, and Sweet.</p>
-            <ul class="card-bullets">
-              <li>Fresh & Hygiene Assured</li>
-              <li>Unlimited Rice Refill</li>
-            </ul>
-          </div>
-          <div class="select-indicator"></div>
-        </div>
-
-        <!-- Option 2: Non-Veg Thali -->
-        <div class="menu-card" id="card-nonveg" data-price="80" data-type="Non-Veg Thali">
-          <div class="card-image-fallback card-nonveg-fallback">
-            <img src="nonveg_thali.jpg" alt="Non-Veg Thali">
-            <div class="nonveg-badge">NON-VEG</div>
-            <div id="disabled-overlay-badge" class="disabled-badge hidden">Disabled Today</div>
-          </div>
-          <div class="card-details">
-            <div class="card-title-row">
-              <h4>Non-Veg Thali</h4>
-              <span class="price-tag">₹80</span>
-            </div>
-            <p class="card-desc">Chicken Curry / Fish Curry, Rice, Dal, Veg Sabji, Salad, and Papad.</p>
-            <ul class="card-bullets">
-              <li>High-Quality Protein</li>
-              <li>Authentic Odia Style Curry</li>
-            </ul>
-          </div>
-          <div class="select-indicator"></div>
+      <!-- Menu Items Grid (Populated dynamically) -->
+      <div class="menu-grid" id="menu-grid-el">
+        <div style="grid-column:1/-1; text-align:center; padding:40px; color:var(--text-secondary);">
+          <div class="spinner" style="width:32px; height:32px; margin:0 auto 12px;"></div>
+          <p>Loading lunch options...</p>
         </div>
       </div>
 
@@ -403,6 +367,54 @@
         </div>
       </div>
 
+      <!-- Admin Thali Management Panel -->
+      <div class="admin-card">
+        <h3>Manage Thali Options</h3>
+        <p class="admin-card-sub">Enable/disable meals or update their prices live in the database.</p>
+        
+        <div class="thali-manager-container">
+          <!-- Veg Thali Edit Block -->
+          <div class="thali-edit-card">
+            <h4>Vegetarian Option</h4>
+            <div class="thali-edit-row">
+              <div class="input-group">
+                <label for="admin-veg-price">Price (₹)</label>
+                <input type="number" id="admin-veg-price" min="1" max="500" value="60">
+              </div>
+              <div class="input-group-checkbox">
+                <input type="checkbox" id="admin-veg-status" checked>
+                <label for="admin-veg-status">Available Today</label>
+              </div>
+            </div>
+            <button id="admin-veg-save-btn" class="btn btn-primary btn-sm btn-block">Save Veg Thali</button>
+          </div>
+          
+          <!-- Non-Veg Thali Edit Block -->
+          <div class="thali-edit-card">
+            <h4>Non-Vegetarian Option</h4>
+            <div class="thali-edit-row">
+              <div class="input-group">
+                <label for="admin-nonveg-price">Price (₹)</label>
+                <input type="number" id="admin-nonveg-price" min="1" max="500" value="80">
+              </div>
+              <div class="input-group-checkbox">
+                <input type="checkbox" id="admin-nonveg-status" checked>
+                <label for="admin-nonveg-status">Available Today</label>
+              </div>
+            </div>
+            <button id="admin-nonveg-save-btn" class="btn btn-primary btn-sm btn-block">Save Non-Veg Thali</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- System Maintenance Panel -->
+      <div class="admin-card warning-card">
+        <h3>System Maintenance</h3>
+        <p class="admin-card-sub">Warning: This action is permanent. It will delete all transaction ledger records.</p>
+        <button id="admin-clear-ledger-btn" class="btn btn-block btn-outline btn-sm warning-btn" style="color:var(--nonveg-color); border-color:var(--nonveg-color); font-weight:700;">
+          🗑️ Clear All Transactions & Previous Orders
+        </button>
+
       <!-- Attendant Verification Console -->
       <div class="admin-card">
         <h3>Attendant Verification Station</h3>
@@ -469,6 +481,6 @@
   <div id="toast-container" class="toast-container"></div>
 
   <!-- Main JavaScript File -->
-  <script src="app.js"></script>
+  <script src="app.js?v=11"></script>
 </body>
 </html>

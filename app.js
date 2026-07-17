@@ -48,8 +48,6 @@ const elements = {
   userDisplayPic: document.getElementById('user-display-pic'),
   
   // Menu Elements
-  cardVeg: document.getElementById('card-veg'),
-  cardNonVeg: document.getElementById('card-nonveg'),
   disabledOverlayBadge: document.getElementById('disabled-overlay-badge'),
   currentDayLabel: document.getElementById('current-day-label'),
   currentDayDesc: document.getElementById('current-day-desc'),
@@ -293,6 +291,7 @@ function showView(viewName) {
     deselectThalis();
     checkActiveCoupon();
     updateDayRules();
+    loadAndRenderMenu();
   }
 
   if (viewName === 'coupon') {
@@ -393,7 +392,7 @@ function setupEventListeners() {
 
   elements.adminPortalBtn.addEventListener('click', () => {
     const code = prompt('Enter Admin/Attendant Passcode:');
-    if (code === '1234') {
+    if (code === 'Gitam@2008') {
       showView('admin');
       showToast('Admin Authorization Granted', 'success');
     } else if (code !== null) {
@@ -404,6 +403,23 @@ function setupEventListeners() {
   elements.adminBackBtn.addEventListener('click', () => {
     showView('menu');
   });
+
+  // Admin Thali Save handlers
+  const saveVegBtn = document.getElementById('admin-veg-save-btn');
+  if (saveVegBtn) {
+    saveVegBtn.addEventListener('click', () => saveThaliConfig('veg'));
+  }
+  
+  const saveNonVegBtn = document.getElementById('admin-nonveg-save-btn');
+  if (saveNonVegBtn) {
+    saveNonVegBtn.addEventListener('click', () => saveThaliConfig('nonveg'));
+  }
+  
+  // Clear Ledger handler
+  const clearLedgerBtn = document.getElementById('admin-clear-ledger-btn');
+  if (clearLedgerBtn) {
+    clearLedgerBtn.addEventListener('click', clearAllTransactionsAdmin);
+  }
 
   elements.headerLogoutBtn.addEventListener('click', () => {
     if (confirm('Are you sure you want to sign out?')) {
@@ -984,6 +1000,7 @@ async function renderAdminDashboard() {
   elements.attendantSearchInput.value = '';
   elements.attendantLookupResult.classList.add('hidden');
   elements.ledgerSearch.value = '';
+  populateAdminThaliInputs();
 }
 
 function renderLedgerTable(records) {
@@ -1265,5 +1282,182 @@ function formatExpiryDate(e) {
     e.target.value = value.substring(0, 2) + '/' + value.substring(2, 4);
   } else {
     e.target.value = value;
+  }
+}
+
+// --- Dynamic Menu Loading & Rendering ---
+async function loadAndRenderMenu() {
+  const container = document.getElementById('menu-grid-el');
+  if (!container) return;
+  
+  try {
+    const res = await fetch('/api/menu/load');
+    if (!res.ok) throw new Error("Could not load menu options.");
+    const menuItems = await res.json();
+    
+    container.innerHTML = '';
+    
+    if (menuItems.length === 0) {
+      container.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:40px; color:var(--text-secondary);">No lunch options configured in the system.</div>`;
+      return;
+    }
+    
+    let dayOfWeek = (state.currentDayOverride === 'auto') ? new Date().getDay() : parseInt(state.currentDayOverride);
+    const isVegOnlyDay = (dayOfWeek === 1 || dayOfWeek === 4 || dayOfWeek === 6);
+    
+    menuItems.forEach(item => {
+      let isAvailable = item.is_available;
+      if (item.id === 'nonveg' && isVegOnlyDay) {
+        isAvailable = false;
+      }
+      
+      const card = document.createElement('div');
+      card.className = `menu-card ${!isAvailable ? 'disabled' : ''}`;
+      card.id = `card-${item.id}`;
+      card.setAttribute('data-price', item.price);
+      card.setAttribute('data-type', item.name);
+      
+      const imgPath = item.id === 'veg' ? 'veg_thali.jpg' : 'nonveg_thali.jpg';
+      const badgeText = item.id === 'veg' ? '100% VEG' : 'NON-VEG';
+      const badgeClass = item.id === 'veg' ? 'veg-badge' : 'nonveg-badge';
+      const fallbackClass = item.id === 'veg' ? 'card-veg-fallback' : 'card-nonveg-fallback';
+      
+      const bullets = item.id === 'veg' 
+        ? `<li>Fresh & Hygiene Assured</li><li>Unlimited Rice Refill</li>`
+        : `<li>High-Quality Protein</li><li>Authentic Odia Style Curry</li>`;
+        
+      card.innerHTML = `
+        <div class="card-image-fallback ${fallbackClass}">
+          <img src="${imgPath}" alt="${item.name}">
+          <div class="${badgeClass}">${badgeText}</div>
+          ${!isAvailable ? `<div id="disabled-overlay-badge" class="disabled-badge">Disabled Today</div>` : ''}
+        </div>
+        <div class="card-details">
+          <div class="card-title-row">
+            <h4>${item.name}</h4>
+            <span class="price-tag">₹${item.price}</span>
+          </div>
+          <p class="card-desc">${item.description}</p>
+          <ul class="card-bullets">
+            ${bullets}
+          </ul>
+        </div>
+        <div class="select-indicator"></div>
+      `;
+      
+      if (isAvailable) {
+        card.addEventListener('click', () => selectThaliDynamic(item.id, item.name, item.price));
+      }
+      
+      container.appendChild(card);
+    });
+  } catch (err) {
+    console.error(err);
+    container.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:40px; color:var(--nonveg-color); font-weight:600;">✖ Failed to load menu options from server.</div>`;
+  }
+}
+
+function selectThaliDynamic(id, name, price) {
+  const vegCard = document.getElementById('card-veg');
+  const nonvegCard = document.getElementById('card-nonveg');
+  
+  if (id === 'veg') {
+    if (vegCard) vegCard.classList.add('selected');
+    if (nonvegCard) nonvegCard.classList.remove('selected');
+  } else {
+    if (nonvegCard) nonvegCard.classList.add('selected');
+    if (vegCard) vegCard.classList.remove('selected');
+  }
+  
+  state.selectedThali = { type: name, price: price };
+  
+  elements.summaryItemName.textContent = name;
+  elements.summaryItemPrice.textContent = `₹${price}`;
+  elements.menuActionBar.classList.remove('hidden');
+}
+
+function deselectThalis() {
+  const vegCard = document.getElementById('card-veg');
+  const nonvegCard = document.getElementById('card-nonveg');
+  if (vegCard) vegCard.classList.remove('selected');
+  if (nonvegCard) nonvegCard.classList.remove('selected');
+  elements.menuActionBar.classList.add('hidden');
+  state.selectedThali = null;
+}
+
+// Load current DB thali values to Admin input fields
+async function populateAdminThaliInputs() {
+  try {
+    const res = await fetch('/api/menu/load');
+    if (res.ok) {
+      const menuItems = await res.json();
+      menuItems.forEach(item => {
+        const priceInput = document.getElementById(`admin-${item.id}-price`);
+        const statusInput = document.getElementById(`admin-${item.id}-status`);
+        if (priceInput) priceInput.value = item.price;
+        if (statusInput) statusInput.checked = item.is_available;
+      });
+    }
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+// Save Thali updates to backend
+async function saveThaliConfig(id) {
+  const priceInput = document.getElementById(`admin-${id}-price`);
+  const statusInput = document.getElementById(`admin-${id}-status`);
+  if (!priceInput || !statusInput) return;
+  
+  const payload = {
+    id: id,
+    price: parseInt(priceInput.value),
+    is_available: statusInput.checked
+  };
+  
+  try {
+    const res = await fetch('/api/admin/menu/update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    
+    if (res.ok) {
+      showToast(`${id === 'veg' ? 'Veg' : 'Non-Veg'} Thali configuration saved!`, 'success');
+      loadAndRenderMenu(); // Re-render thalis on main screen
+    } else {
+      showToast('Failed to update thali on server.', 'error');
+    }
+  } catch (err) {
+    console.error(err);
+    showToast('Connection error updating thali settings.', 'error');
+  }
+}
+
+// Clear all database records
+async function clearAllTransactionsAdmin() {
+  if (!confirm('🚨 WARNING: Are you sure you want to permanently clear all transactions, coupons, and orders from the database? This cannot be undone.')) {
+    return;
+  }
+  
+  try {
+    const res = await fetch('/api/admin/clear-ledger', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ passcode: 'Gitam@2008' })
+    });
+    
+    if (res.ok) {
+      showToast('All transaction records cleared successfully!', 'success');
+      state.coupon = null;
+      saveDB();
+      checkActiveCoupon();
+      renderAdminDashboard(); // Refresh metrics
+    } else {
+      showToast('Ledger clearing was rejected by server.', 'error');
+    }
+  } catch (err) {
+    console.error(err);
+    showToast('Failed to connect to system maintenance API.', 'error');
   }
 }
