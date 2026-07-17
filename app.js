@@ -444,7 +444,7 @@ function setupEventListeners() {
   });
 
   elements.checkoutCloseBtn.addEventListener('click', () => {
-    elements.checkout.classList.add('hidden');
+    views.checkout.classList.add('hidden');
   });
 
   // Tab switching
