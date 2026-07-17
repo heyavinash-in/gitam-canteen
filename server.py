@@ -61,10 +61,10 @@ def init_db():
         )
     ''')
     
-    # Seed default config values if not present
-    cursor.execute("INSERT OR IGNORE INTO config (key, value) VALUES ('google_client_id', '')")
-    cursor.execute("INSERT OR IGNORE INTO config (key, value) VALUES ('razorpay_key_id', 'rzp_test_zHsn7sN6rMvH5e')")
-    cursor.execute("INSERT OR IGNORE INTO config (key, value) VALUES ('razorpay_key_secret', '')")
+    # Seed default config values (always override with hardcoded credentials for persistence)
+    cursor.execute("INSERT OR REPLACE INTO config (key, value) VALUES ('google_client_id', '811997218929-tion706h3r0lfo7b2f75m8t33jaaeegc.apps.googleusercontent.com')")
+    cursor.execute("INSERT OR REPLACE INTO config (key, value) VALUES ('razorpay_key_id', 'rzp_test_TEXV2FeUmSXt6v')")
+    cursor.execute("INSERT OR REPLACE INTO config (key, value) VALUES ('razorpay_key_secret', 'qk8hcrUomfBQCqdDxoP8534H')")
     
     conn.commit()
     conn.close()
@@ -219,14 +219,9 @@ class CanteenRequestHandler(http.server.BaseHTTPRequestHandler):
             "has_razorpay_secret": has_secret
         })
 
-    # POST /api/config/save
+    # POST /api/config/save (Disabled for security)
     def handle_save_config(self, payload):
-        google_client_id = payload.get('google_client_id', '').strip()
-        razorpay_key_id = payload.get('razorpay_key_id', '').strip()
-        razorpay_key_secret = payload.get('razorpay_key_secret', '').strip()
-        
-        save_config(google_client_id, razorpay_key_id, razorpay_key_secret)
-        self.send_json_response({"status": "success", "message": "API keys updated on server."})
+        self.send_error_response(403, "Configuration updates are disabled in production.")
 
     # POST /api/auth/google
     def handle_google_auth(self, payload):

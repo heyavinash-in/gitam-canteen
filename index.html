@@ -38,9 +38,7 @@
         <button id="admin-portal-btn" class="icon-btn hidden" title="Admin & Attendant Portal">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
         </button>
-        <button id="dev-toggle-btn" class="icon-btn" title="Toggle Developer Controls">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-        </button>
+
         <button id="logout-btn" class="icon-btn hidden" title="Logout">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
         </button>
@@ -48,49 +46,7 @@
     </div>
   </header>
 
-  <!-- Collapsible Developer Control Panel -->
-  <section id="dev-console" class="dev-panel hidden">
-    <div class="dev-panel-header">
-      <h3>Developer controls & API Keys</h3>
-    </div>
-    <div class="dev-panel-body">
-      <div class="dev-control-group">
-        <label for="dev-day-select">Override Simulation Day:</label>
-        <select id="dev-day-select">
-          <option value="auto">Use Real Current Day</option>
-          <option value="0">Sunday (All Options)</option>
-          <option value="1">Monday (Veg-Only Day)</option>
-          <option value="2">Tuesday (All Options)</option>
-          <option value="3">Wednesday (All Options)</option>
-          <option value="4">Thursday (Veg-Only Day)</option>
-          <option value="5">Friday (All Options)</option>
-          <option value="6">Saturday (Veg-Only Day)</option>
-        </select>
-      </div>
-      
-      <div class="dev-divider"></div>
-      
-      <div class="dev-control-group-stack">
-        <label>Google OAuth Client ID (for official Sign-in):</label>
-        <input type="text" id="dev-google-client-id" placeholder="Google Client ID (e.g. 1092...)" value="">
-      </div>
 
-      <div class="dev-control-group-stack">
-        <label>Razorpay Key ID (Merchant Payment Account):</label>
-        <input type="text" id="dev-razorpay-key-id" placeholder="Razorpay Key ID (rzp_test_...)" value="rzp_test_zHsn7sN6rMvH5e">
-      </div>
-
-      <div class="dev-control-group-stack">
-        <label>Razorpay Key Secret (Kept secure on backend):</label>
-        <input type="password" id="dev-razorpay-key-secret" placeholder="Razorpay Key Secret (rzp_secret_...)" value="">
-      </div>
-      
-      <div class="dev-actions">
-        <button id="dev-save-keys-btn" class="btn btn-primary btn-sm">Save Key Settings</button>
-        <button id="dev-reset-db-btn" class="btn btn-outline btn-sm">Reset All App Data</button>
-      </div>
-    </div>
-  </section>
 
   <!-- Main Container -->
   <main class="app-main">

@@ -131,12 +131,14 @@ async function loadServerConfig() {
       state.googleClientId = data.google_client_id || '';
       state.razorpayKeyId = data.razorpay_key_id || 'rzp_test_zHsn7sN6rMvH5e';
       
-      elements.devGoogleClientId.value = state.googleClientId;
-      elements.devRazorpayKeyId.value = state.razorpayKeyId;
-      if (data.has_razorpay_secret === 'yes') {
-        elements.devRazorpayKeySecret.placeholder = '******** (Saved)';
-      } else {
-        elements.devRazorpayKeySecret.placeholder = 'Enter secret key';
+      if (elements.devGoogleClientId) elements.devGoogleClientId.value = state.googleClientId;
+      if (elements.devRazorpayKeyId) elements.devRazorpayKeyId.value = state.razorpayKeyId;
+      if (elements.devRazorpayKeySecret) {
+        if (data.has_razorpay_secret === 'yes') {
+          elements.devRazorpayKeySecret.placeholder = '******** (Saved)';
+        } else {
+          elements.devRazorpayKeySecret.placeholder = 'Enter secret key';
+        }
       }
     }
   } catch (err) {
@@ -157,7 +159,7 @@ function initApp() {
   const savedDay = localStorage.getItem('gitam_canteen_day_override');
   if (savedDay) {
     state.currentDayOverride = savedDay;
-    elements.devDaySelect.value = savedDay;
+    if (elements.devDaySelect) elements.devDaySelect.value = savedDay;
   }
 
   // Clear any existing polling threads
@@ -304,82 +306,90 @@ function showView(viewName) {
 
 // --- Event Listeners Setup ---
 function setupEventListeners() {
-  elements.devToggleBtn.addEventListener('click', () => {
-    elements.devConsole.classList.toggle('hidden');
-  });
+  if (elements.devToggleBtn) {
+    elements.devToggleBtn.addEventListener('click', () => {
+      elements.devConsole.classList.toggle('hidden');
+    });
+  }
 
-  elements.devDaySelect.addEventListener('change', (e) => {
-    state.currentDayOverride = e.target.value;
-    localStorage.setItem('gitam_canteen_day_override', e.target.value);
-    updateDayRules();
-    showToast(`Simulation day changed to ${elements.devDaySelect.options[elements.devDaySelect.selectedIndex].text}`, 'info');
-  });
+  if (elements.devDaySelect) {
+    elements.devDaySelect.addEventListener('change', (e) => {
+      state.currentDayOverride = e.target.value;
+      localStorage.setItem('gitam_canteen_day_override', e.target.value);
+      updateDayRules();
+      showToast(`Simulation day changed to ${elements.devDaySelect.options[elements.devDaySelect.selectedIndex].text}`, 'info');
+    });
+  }
 
-  elements.devSaveKeysBtn.addEventListener('click', async () => {
-    const googleId = elements.devGoogleClientId.value.trim();
-    const rzpId = elements.devRazorpayKeyId.value.trim();
-    const rzpSecret = elements.devRazorpayKeySecret.value.trim();
-
-    try {
-      const res = await fetch('/api/config/save', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          google_client_id: googleId,
-          razorpay_key_id: rzpId,
-          razorpay_key_secret: rzpSecret
-        })
-      });
-
-      if (res.ok) {
-        showToast('API Configurations saved on server!', 'success');
-        elements.devRazorpayKeySecret.value = ''; // clear password input field
-        elements.devConsole.classList.add('hidden');
-        await loadServerConfig();
-        initApp(); // re-render login components
-      } else {
-        showToast('Failed to save keys on server.', 'error');
-      }
-    } catch (err) {
-      console.error(err);
-      showToast('Connection failure to save API settings.', 'error');
-    }
-  });
-
-  elements.devResetBtn.addEventListener('click', async () => {
-    if (confirm('Are you sure you want to reset all server and local database tables? This logs you out.')) {
-      // Clear local storage
-      localStorage.clear();
-      state.user = null;
-      state.coupon = null;
-      state.selectedThali = null;
+  if (elements.devSaveKeysBtn) {
+    elements.devSaveKeysBtn.addEventListener('click', async () => {
+      const googleId = elements.devGoogleClientId.value.trim();
+      const rzpId = elements.devRazorpayKeyId.value.trim();
+      const rzpSecret = elements.devRazorpayKeySecret.value.trim();
 
       try {
         const res = await fetch('/api/config/save', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            google_client_id: '',
-            razorpay_key_id: 'rzp_test_zHsn7sN6rMvH5e',
-            razorpay_key_secret: ''
+            google_client_id: googleId,
+            razorpay_key_id: rzpId,
+            razorpay_key_secret: rzpSecret
           })
         });
+
         if (res.ok) {
-          showToast('Server and Client database tables cleared.', 'info');
+          showToast('API Configurations saved on server!', 'success');
+          elements.devRazorpayKeySecret.value = ''; // clear password input field
+          elements.devConsole.classList.add('hidden');
+          await loadServerConfig();
+          initApp(); // re-render login components
+        } else {
+          showToast('Failed to save keys on server.', 'error');
         }
       } catch (err) {
         console.error(err);
+        showToast('Connection failure to save API settings.', 'error');
       }
-      
-      elements.devGoogleClientId.value = '';
-      elements.devRazorpayKeyId.value = 'rzp_test_zHsn7sN6rMvH5e';
-      elements.devRazorpayKeySecret.value = '';
-      elements.devConsole.classList.add('hidden');
-      
-      await loadServerConfig();
-      initApp();
-    }
-  });
+    });
+  }
+
+  if (elements.devResetBtn) {
+    elements.devResetBtn.addEventListener('click', async () => {
+      if (confirm('Are you sure you want to reset all server and local database tables? This logs you out.')) {
+        // Clear local storage
+        localStorage.clear();
+        state.user = null;
+        state.coupon = null;
+        state.selectedThali = null;
+
+        try {
+          const res = await fetch('/api/config/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              google_client_id: '',
+              razorpay_key_id: 'rzp_test_zHsn7sN6rMvH5e',
+              razorpay_key_secret: ''
+            })
+          });
+          if (res.ok) {
+            showToast('Server and Client database tables cleared.', 'info');
+          }
+        } catch (err) {
+          console.error(err);
+        }
+        
+        if (elements.devGoogleClientId) elements.devGoogleClientId.value = '';
+        if (elements.devRazorpayKeyId) elements.devRazorpayKeyId.value = 'rzp_test_zHsn7sN6rMvH5e';
+        if (elements.devRazorpayKeySecret) elements.devRazorpayKeySecret.value = '';
+        if (elements.devConsole) elements.devConsole.classList.add('hidden');
+        
+        await loadServerConfig();
+        initApp();
+      }
+    });
+  }
 
   elements.adminPortalBtn.addEventListener('click', () => {
     const code = prompt('Enter Admin/Attendant Passcode:');

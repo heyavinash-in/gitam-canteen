@@ -1,5 +1,5 @@
 // GITAM Canteen PWA - Service Worker
-const CACHE_NAME = 'gitam-canteen-v2';
+const CACHE_NAME = 'gitam-canteen-v3';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
