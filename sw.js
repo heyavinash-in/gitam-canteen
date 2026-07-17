@@ -1,12 +1,14 @@
 // GITAM Canteen PWA - Service Worker
-const CACHE_NAME = 'gitam-canteen-v4';
+const CACHE_NAME = 'gitam-canteen-v5';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
   './style.css',
   './app.js',
   './manifest.json',
-  './canteen_logo.jpg'
+  './canteen_logo.jpg',
+  './veg_thali.jpg',
+  './nonveg_thali.jpg'
 ];
 
 // 1. Install event: Cache all vital files
