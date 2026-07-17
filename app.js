@@ -6,7 +6,7 @@ const state = {
   selectedThali: null,      // { type, price }
   coupon: null,             // { id, type, price, purchasedAt, status, code, scratchedAt }
   googleClientId: '',       // Configured in Developer Panel
-  razorpayKeyId: 'rzp_test_zHsn7sN6rMvH5e', // Configured in Developer Panel
+  razorpayKeyId: 'rzp_test_TEXV2FeUmSXt6v', // Configured in Developer Panel
   currentDayOverride: 'auto' // 'auto' or 0-6 (Sun-Sat)
 };
 
@@ -127,7 +127,7 @@ async function loadServerConfig() {
     if (res.ok) {
       const data = await res.json();
       state.googleClientId = data.google_client_id || '';
-      state.razorpayKeyId = data.razorpay_key_id || 'rzp_test_zHsn7sN6rMvH5e';
+      state.razorpayKeyId = data.razorpay_key_id || 'rzp_test_TEXV2FeUmSXt6v';
       
       if (elements.devGoogleClientId) elements.devGoogleClientId.value = state.googleClientId;
       if (elements.devRazorpayKeyId) elements.devRazorpayKeyId.value = state.razorpayKeyId;
