@@ -441,8 +441,7 @@ function setupEventListeners() {
     elements.googleLoginBtn.addEventListener('click', simulateGoogleLogin);
   }
 
-  elements.cardVeg.addEventListener('click', () => selectThali('veg'));
-  elements.cardNonVeg.addEventListener('click', () => selectThali('nonveg'));
+
 
   elements.orderProceedBtn.addEventListener('click', () => {
     if (state.selectedThali) {
@@ -572,7 +571,6 @@ async function simulateGoogleLogin() {
 // --- Day-Based Rules & Menu Controller ---
 function updateDayRules() {
   let dayOfWeek;
-
   if (state.currentDayOverride === 'auto') {
     dayOfWeek = new Date().getDay();
   } else {
@@ -585,43 +583,16 @@ function updateDayRules() {
   const isVegOnly = (dayOfWeek === 1 || dayOfWeek === 4 || dayOfWeek === 6);
 
   if (isVegOnly) {
-    elements.cardNonVeg.classList.add('disabled');
-    elements.disabledOverlayBadge.classList.remove('hidden');
     elements.currentDayDesc.innerHTML = `<strong>VEG-ONLY DAY</strong>. Non-veg option is disabled today.`;
-    
     if (state.selectedThali && state.selectedThali.type === 'Non-Veg Thali') {
       deselectThalis();
     }
   } else {
-    elements.cardNonVeg.classList.remove('disabled');
-    elements.disabledOverlayBadge.classList.add('hidden');
     elements.currentDayDesc.innerHTML = `Veg and Non-Veg Thalis are both orderable today.`;
   }
 }
 
-function selectThali(type) {
-  if (type === 'veg') {
-    elements.cardVeg.classList.add('selected');
-    elements.cardNonVeg.classList.remove('selected');
-    state.selectedThali = { type: 'Veg Thali', price: 60 };
-  } else {
-    if (elements.cardNonVeg.classList.contains('disabled')) return;
-    elements.cardNonVeg.classList.add('selected');
-    elements.cardVeg.classList.remove('selected');
-    state.selectedThali = { type: 'Non-Veg Thali', price: 80 };
-  }
 
-  elements.summaryItemName.textContent = state.selectedThali.type;
-  elements.summaryItemPrice.textContent = `₹${state.selectedThali.price}`;
-  elements.menuActionBar.classList.remove('hidden');
-}
-
-function deselectThalis() {
-  elements.cardVeg.classList.remove('selected');
-  elements.cardNonVeg.classList.remove('selected');
-  elements.menuActionBar.classList.add('hidden');
-  state.selectedThali = null;
-}
 
 function checkActiveCoupon() {
   elements.activeCouponAlert.classList.toggle('hidden', !state.coupon);
