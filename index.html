@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#4f46e5">
+  <meta name="description" content="Official GITAM Canteen digital token and payment application. Quick digital thali ordering and fast scratch coupon redemption.">
+  <title>GITAM Canteen - Digital Thali Payment</title>
+  
+  <!-- Google Fonts & Styles -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  
+  <!-- PWA Support -->
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="canteen_logo.jpg">
+  <link rel="icon" type="image/jpg" href="canteen_logo.jpg">
+
+  <!-- Real External SDKs: Google Identity & Razorpay Checkout -->
+  <script src="https://accounts.google.com/gsi/client" defer></script>
+  <script src="https://checkout.razorpay.com/v1/checkout.js" defer></script>
+</head>
+<body>
+
+  <!-- Top Sticky Header -->
+  <header class="app-header">
+    <div class="header-container">
+      <div class="logo-area">
+        <img src="canteen_logo.jpg" alt="GITAM Logo" class="header-logo" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\' fill=\'%234f46e5\'><rect width=\'100\' height=\'100\' rx=\'20\'/><text x=\'50\' y=\'58\' font-size=\'24\' font-family=\'Outfit\' font-weight=\'bold\' fill=\'white\' text-anchor=\'middle\'>GITAM</text></svg>'">
+        <div class="brand-text">
+          <h1>GITAM Canteen</h1>
+          <span class="sub-brand">Bhubaneswar</span>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button id="admin-portal-btn" class="icon-btn hidden" title="Admin & Attendant Portal">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+        </button>
+        <button id="dev-toggle-btn" class="icon-btn" title="Toggle Developer Controls">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+        </button>
+        <button id="logout-btn" class="icon-btn hidden" title="Logout">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Collapsible Developer Control Panel -->
+  <section id="dev-console" class="dev-panel hidden">
+    <div class="dev-panel-header">
+      <h3>Developer controls & API Keys</h3>
+    </div>
+    <div class="dev-panel-body">
+      <div class="dev-control-group">
+        <label for="dev-day-select">Override Simulation Day:</label>
+        <select id="dev-day-select">
+          <option value="auto">Use Real Current Day</option>
+          <option value="0">Sunday (All Options)</option>
+          <option value="1">Monday (Veg-Only Day)</option>
+          <option value="2">Tuesday (All Options)</option>
+          <option value="3">Wednesday (All Options)</option>
+          <option value="4">Thursday (Veg-Only Day)</option>
+          <option value="5">Friday (All Options)</option>
+          <option value="6">Saturday (Veg-Only Day)</option>
+        </select>
+      </div>
+      
+      <div class="dev-divider"></div>
+      
+      <div class="dev-control-group-stack">
+        <label>Google OAuth Client ID (for official Sign-in):</label>
+        <input type="text" id="dev-google-client-id" placeholder="Google Client ID (e.g. 1092...)" value="">
+      </div>
+
+      <div class="dev-control-group-stack">
+        <label>Razorpay Key ID (Merchant Payment Account):</label>
+        <input type="text" id="dev-razorpay-key-id" placeholder="Razorpay Key ID (rzp_test_...)" value="rzp_test_zHsn7sN6rMvH5e">
+      </div>
+
+      <div class="dev-control-group-stack">
+        <label>Razorpay Key Secret (Kept secure on backend):</label>
+        <input type="password" id="dev-razorpay-key-secret" placeholder="Razorpay Key Secret (rzp_secret_...)" value="">
+      </div>
+      
+      <div class="dev-actions">
+        <button id="dev-save-keys-btn" class="btn btn-primary btn-sm">Save Key Settings</button>
+        <button id="dev-reset-db-btn" class="btn btn-outline btn-sm">Reset All App Data</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main Container -->
+  <main class="app-main">
+
+    <!-- View 1: Mandatory Authentication -->
+    <section id="login-view" class="app-view active">
+      <div class="auth-card">
+        <div class="auth-header">
+          <div class="auth-icon-circle">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+          </div>
+          <h2>College Sign In</h2>
+          <p>Please log in using your official Google account to access the menu and payment features.</p>
+        </div>
+        
+        <!-- Official Google GSI Render Button -->
+        <div class="google-auth-wrapper">
+          <div id="google-signin-btn-el"></div>
+        </div>
+
+        <div class="auth-divider-box">
+          <span class="auth-divider-line"></span>
+          <span class="auth-divider-text">OR BYPASS FOR LOCAL TEST</span>
+          <span class="auth-divider-line"></span>
+        </div>
+
+        <!-- Bypass Demo Student Selection for local testing without OAuth configurations -->
+        <div class="auth-form-group">
+          <label for="login-student-name">Select Demo Identity</label>
+          <select id="login-student-name">
+            <option value="Siddharth Mohanty" data-roll="1201202203" data-email="siddharth.m@gitam.edu.in">Siddharth Mohanty (B.Tech CSE, Roll: 1201202203)</option>
+            <option value="Priya Patra" data-roll="1201202245" data-email="priya.p@gitam.edu.in">Priya Patra (B.Tech ECE, Roll: 1201202245)</option>
+            <option value="Prof. Ashutosh Sen" data-roll="FAC-0982" data-email="ashutosh.sen@gitam.edu.in">Prof. Ashutosh Sen (Faculty - Basic Sciences)</option>
+            <option value="Custom">-- Enter Custom Student Details --</option>
+          </select>
+        </div>
+
+        <div id="custom-identity-fields" class="hidden">
+          <div class="auth-form-group">
+            <label for="custom-name">Full Name</label>
+            <input type="text" id="custom-name" placeholder="e.g. Ramesh Kumar" value="">
+          </div>
+          <div class="auth-form-group">
+            <label for="custom-roll">Roll Number / ID</label>
+            <input type="text" id="custom-roll" placeholder="e.g. 1201202299" value="">
+          </div>
+          <div class="auth-form-group">
+            <label for="custom-email">College Email</label>
+            <input type="email" id="custom-email" placeholder="e.g. ramesh.k@gitam.edu.in" value="">
+          </div>
+        </div>
+
+        <button id="google-login-btn" class="google-btn">
+          <div class="google-icon-wrapper">
+            <svg class="google-icon" viewBox="0 0 24 24" width="20" height="20" xmlns="http://www.w3.org/2000/svg">
+              <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+              <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+              <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05"/>
+              <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335"/>
+            </svg>
+          </div>
+          <span class="btn-text">Demo Sign-In Bypass</span>
+        </button>
+
+        <div class="auth-footer">
+          <p>© 2026 GITAM Bhubaneswar. All rights reserved.</p>
+          <p class="fee-badge">Free Student Access ($0 Platform Fees)</p>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- View 2: Ultra-Simplified Menu -->
+    <section id="menu-view" class="app-view">
+      <div class="welcome-banner">
+        <div class="user-profile-details">
+          <img id="user-display-pic" src="" alt="Profile" class="user-display-pic hidden">
+          <div class="user-profile-text">
+            <h2>Hello, <span id="user-display-name">Student</span></h2>
+            <p id="user-display-roll" class="roll-badge">Roll: 1201202203</p>
+          </div>
+        </div>
+        <div class="active-badge-container">
+          <span class="pwa-status-badge">PWA Online</span>
+        </div>
+      </div>
+
+      <!-- Live Day Banner & Info -->
+      <div id="day-banner" class="info-alert">
+        <div class="alert-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+        </div>
+        <div class="alert-content">
+          <span class="alert-title" id="current-day-label">Thursday</span>
+          <span class="alert-description" id="current-day-desc">Non-Veg Thali is disabled on Mondays, Thursdays, and Saturdays.</span>
+        </div>
+      </div>
+
+      <!-- Quick Reset Indicator if active coupon exists -->
+      <div id="active-coupon-alert" class="coupon-alert hidden">
+        <div class="alert-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5V2a2 2 0 0 0-2-2H2a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2zM0 12v3a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H2a2 2 0 0 0-2 2z"></path></svg>
+        </div>
+        <div class="alert-content">
+          <span class="alert-title">You have an active meal coupon!</span>
+          <button id="view-active-coupon-btn" class="link-btn">View My Coupon Now &rarr;</button>
+        </div>
+      </div>
+
+      <h3 class="section-title">Select Lunch Option</h3>
+
+      <!-- Menu Items Grid -->
+      <div class="menu-grid">
+        <!-- Option 1: Veg Thali -->
+        <div class="menu-card" id="card-veg" data-price="60" data-type="Veg Thali">
+          <div class="card-image-fallback card-veg-fallback">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+            <div class="veg-badge">100% VEG</div>
+          </div>
+          <div class="card-details">
+            <div class="card-title-row">
+              <h4>Veg Thali</h4>
+              <span class="price-tag">₹60</span>
+            </div>
+            <p class="card-desc">Rice, Dal, 2 Veg Sabji, Roti, Salad, Papad, and Sweet.</p>
+            <ul class="card-bullets">
+              <li>Fresh & Hygiene Assured</li>
+              <li>Unlimited Rice Refill</li>
+            </ul>
+          </div>
+          <div class="select-indicator"></div>
+        </div>
+
+        <!-- Option 2: Non-Veg Thali -->
+        <div class="menu-card" id="card-nonveg" data-price="80" data-type="Non-Veg Thali">
+          <div class="card-image-fallback card-nonveg-fallback">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+            <div class="nonveg-badge">NON-VEG</div>
+            <div id="disabled-overlay-badge" class="disabled-badge hidden">Disabled Today</div>
+          </div>
+          <div class="card-details">
+            <div class="card-title-row">
+              <h4>Non-Veg Thali</h4>
+              <span class="price-tag">₹80</span>
+            </div>
+            <p class="card-desc">Chicken Curry / Fish Curry, Rice, Dal, Veg Sabji, Salad, and Papad.</p>
+            <ul class="card-bullets">
+              <li>High-Quality Protein</li>
+              <li>Authentic Odia Style Curry</li>
+            </ul>
+          </div>
+          <div class="select-indicator"></div>
+        </div>
+      </div>
+
+      <!-- Action Panel -->
+      <div id="menu-action-bar" class="action-bar hidden">
+        <div class="action-bar-content">
+          <div class="selected-summary">
+            <span class="summary-label">Selected Item:</span>
+            <span id="summary-item-name" class="summary-value">Veg Thali</span>
+          </div>
+          <div class="total-section">
+            <span class="total-label">Total to Pay:</span>
+            <span id="summary-item-price" class="total-value">₹60</span>
+          </div>
+        </div>
+        <button id="order-proceed-btn" class="btn btn-primary btn-block">
+          Proceed to Pay
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+        </button>
+      </div>
+    </section>
+
+
+    <!-- View 3: Payment Checkout Modal Overlay -->
+    <section id="checkout-modal" class="modal-overlay hidden">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h3>Secure Checkout</h3>
+          <button id="checkout-close-btn" class="close-btn" title="Cancel Checkout">&times;</button>
+        </div>
+        
+        <div class="checkout-summary-box">
+          <div class="summary-row">
+            <span>Meal Ticket:</span>
+            <strong id="checkout-item-name">Veg Thali</strong>
+          </div>
+          <div class="summary-row">
+            <span>Settlement:</span>
+            <span class="settle-badge">Direct to College Bank Account</span>
+          </div>
+          <hr class="summary-divider">
+          <div class="summary-row total-row">
+            <span>Total Amount:</span>
+            <strong id="checkout-item-price">₹60.00</strong>
+          </div>
+        </div>
+
+        <div class="payment-tabs">
+          <button class="pay-tab active" data-target="tab-upi">UPI App (Direct Link)</button>
+          <button class="pay-tab" data-target="tab-card">Credit / Debit Card</button>
+          <button class="pay-tab" data-target="tab-rzp">Razorpay Gateway</button>
+        </div>
+
+        <!-- Tab Content 1: Direct UPI Deep Link Trigger -->
+        <div id="tab-upi" class="tab-content active">
+          <div class="upi-instructions">
+            <p>Tap the button below to launch any installed UPI App (GPay, PhonePe, Paytm, BHIM) on your mobile device to complete payment.</p>
+          </div>
+          <div class="upi-actions-stack">
+            <button id="launch-upi-btn" class="btn btn-primary btn-block btn-lg">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+              Launch UPI Payment App
+            </button>
+            <div class="confirmation-section">
+              <p class="confirm-notice">After completing the payment, return here and tap verify to issue your coupon:</p>
+              <button id="verify-upi-btn" class="btn btn-outline btn-block">
+                Verify Payment Transfer
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab Content 2: Credit/Debit Card Form -->
+        <div id="tab-card" class="tab-content">
+          <form id="card-payment-form" onsubmit="event.preventDefault();">
+            <div class="form-group">
+              <label for="card-num">Card Number</label>
+              <input type="text" id="card-num" placeholder="4111 2222 3333 4444" maxlength="19" required>
+            </div>
+            <div class="form-row">
+              <div class="form-group col">
+                <label for="card-expiry">Expiry Date</label>
+                <input type="text" id="card-expiry" placeholder="MM/YY" maxlength="5" required>
+              </div>
+              <div class="form-group col">
+                <label for="card-cvv">CVV</label>
+                <input type="password" id="card-cvv" placeholder="123" maxlength="3" required>
+              </div>
+            </div>
+            <button type="submit" id="card-pay-submit" class="btn btn-primary btn-block" style="margin-top:12px;">Pay Securely</button>
+          </form>
+        </div>
+
+        <!-- Tab Content 3: Razorpay Gateway SDK -->
+        <div id="tab-rzp" class="tab-content">
+          <div class="gateway-instruction-card">
+            <div class="rzp-shield-badge">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+              <span>Razorpay Secure Checkout</span>
+            </div>
+            <p>Pay securely via Razorpay's overlay supporting all options: UPI, Card, Net Banking, and Wallets.</p>
+          </div>
+          <button id="checkout-rzp-pay-btn" class="btn btn-primary btn-block btn-lg">
+            Pay with Razorpay Gateway
+          </button>
+        </div>
+
+        <div class="modal-footer">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="lock-icon"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+          Direct College Settlement. $0 Platform Fees.
+        </div>
+      </div>
+    </section>
+
+
+    <!-- View 4: Digital Scratch Coupon -->
+    <section id="coupon-view" class="app-view">
+      <div class="coupon-container">
+        
+        <!-- Main Ticket Wrapper -->
+        <div class="ticket-card" id="meal-ticket">
+          <div class="ticket-header-gradient" id="ticket-header-bg">
+            <div class="ticket-header-content">
+              <span class="institution-label">GITAM Bhubaneswar</span>
+              <h2 id="ticket-thali-type">VEG THALI COUPON</h2>
+              <span id="ticket-ref-number" class="ref-badge">REF: GITAM-89230A</span>
+            </div>
+            <div class="ticket-header-notch-left"></div>
+            <div class="ticket-header-notch-right"></div>
+          </div>
+
+          <!-- Ticket Details -->
+          <div class="ticket-details-box">
+            <div class="detail-row">
+              <span class="detail-label">STUDENT</span>
+              <span class="detail-value" id="ticket-student-name">Siddharth Mohanty</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">EMAIL</span>
+              <span class="detail-value" id="ticket-student-roll">siddharth.m@gitam.edu.in</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">PURCHASED AT</span>
+              <span class="detail-value" id="ticket-purchase-time">2026-07-16 10:14 PM</span>
+            </div>
+            <div class="detail-row price-row">
+              <span class="detail-label">AMOUNT PAID</span>
+              <span class="detail-value highlight-price" id="ticket-amount">₹60.00</span>
+            </div>
+            <div class="detail-row status-row">
+              <span class="detail-label">STATUS</span>
+              <span class="ticket-status-pill status-active" id="ticket-status-pill">ACTIVE - READY</span>
+            </div>
+          </div>
+
+          <!-- Interactive Scratch Card Panel -->
+          <div class="scratch-card-box">
+            <div class="scratch-instructions" id="scratch-prompt-text">
+              <span class="hand-icon">&darr;</span>
+              <strong>Attendant Near Rice Stall:</strong>
+              <p>Physically swipe/scratch below to dispense meal</p>
+            </div>
+
+            <div id="scratch-canvas-container" class="scratch-canvas-wrapper">
+              <!-- Revealed content -->
+              <div class="scratched-reveal-content">
+                <div class="reveal-success-icon">
+                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </div>
+                <h4 class="validation-code" id="coupon-security-code">VERIFIED: OK-60V</h4>
+                <p class="validation-sub">Dispense Lunch Meal Now</p>
+              </div>
+
+              <!-- HTML5 Scratch Canvas -->
+              <canvas id="scratch-canvas" class="scratch-canvas-layer"></canvas>
+            </div>
+          </div>
+
+          <!-- Used Stamp (Diagonally overlayed) -->
+          <div id="ticket-used-stamp" class="used-stamp hidden">
+            <div class="stamp-inner">
+              <span class="stamp-title">REDEEMED</span>
+              <span class="stamp-date" id="ticket-used-timestamp">16-JUL-2026 22:05</span>
+            </div>
+          </div>
+
+          <!-- Ticket Footer Info -->
+          <div class="ticket-footer">
+            <p>This coupon can only be used once. Attendant will scratch the screen at the serving desk. Ledger states lock automatically upon redemption.</p>
+          </div>
+        </div>
+
+        <!-- Back to Menu Button -->
+        <button id="back-to-menu-btn" class="btn btn-outline btn-block">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+          Order Another Meal
+        </button>
+      </div>
+    </section>
+
+
+    <!-- View 5: Admin & Attendant Verification View -->
+    <section id="admin-view" class="app-view">
+      <div class="welcome-banner">
+        <div>
+          <h2>Canteen Dashboard</h2>
+          <span class="roll-badge">Finance & Attendant Stand controls</span>
+        </div>
+        <button id="admin-back-btn" class="btn btn-outline btn-sm">
+          &larr; Menu
+        </button>
+      </div>
+
+      <!-- Admin Stat Grid -->
+      <div class="admin-stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon veg-color-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+          </div>
+          <div class="stat-details">
+            <span class="stat-label">Veg Thalis</span>
+            <strong id="stat-veg-count">0</strong>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon nonveg-color-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+          </div>
+          <div class="stat-details">
+            <span class="stat-label">Non-Veg Thalis</span>
+            <strong id="stat-nonveg-count">0</strong>
+          </div>
+        </div>
+
+        <div class="stat-card col-span-2">
+          <div class="stat-icon rev-color-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+          </div>
+          <div class="stat-details">
+            <span class="stat-label">Total Revenue Settled</span>
+            <strong id="stat-revenue-value">₹0.00</strong>
+          </div>
+        </div>
+      </div>
+
+      <!-- Attendant Verification Console -->
+      <div class="admin-card">
+        <h3>Attendant Verification Station</h3>
+        <p class="admin-card-sub">Manually verify and scratch coupons using Student Email or reference ID.</p>
+        
+        <div class="admin-search-row">
+          <input type="text" id="attendant-search-input" placeholder="Enter Email / Ref ID (e.g. siddharth.m@gitam.edu.in)">
+          <button id="attendant-search-btn" class="btn btn-primary">Verify & Redeem</button>
+        </div>
+        
+        <div id="attendant-lookup-result" class="lookup-result-box hidden">
+          <!-- Populated dynamically via JS -->
+        </div>
+      </div>
+
+      <!-- Transaction Ledger table -->
+      <div class="admin-card ledger-card">
+        <div class="ledger-header">
+          <h3>Daily Transaction Ledger</h3>
+          <input type="text" id="ledger-search" placeholder="Filter ledger records...">
+        </div>
+        
+        <div class="table-container">
+          <table class="ledger-table" id="ledger-table-el">
+            <thead>
+              <tr>
+                <th>Student</th>
+                <th>Thali</th>
+                <th>Amount</th>
+                <th>Reference ID</th>
+                <th>Date/Time</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="ledger-tbody">
+              <!-- Populated dynamically -->
+              <tr class="empty-row">
+                <td colspan="6">No transactions recorded on this device yet.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- PWA Install Prompt Banner -->
+  <div id="pwa-install-banner" class="pwa-banner hidden">
+    <div class="pwa-banner-content">
+      <img src="canteen_logo.jpg" alt="App Logo" class="pwa-icon" onerror="this.style.display='none'">
+      <div class="pwa-text">
+        <h4>Install GITAM Canteen</h4>
+        <p>Add to Home Screen for offline access & faster service.</p>
+      </div>
+    </div>
+    <div class="pwa-actions-btns">
+      <button id="pwa-install-btn" class="btn btn-primary btn-sm">Install</button>
+      <button id="pwa-close-btn" class="close-btn-text">Later</button>
+    </div>
+  </div>
+
+  <!-- Toast Notification System -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- Main JavaScript File -->
+  <script src="app.js"></script>
+</body>
+</html>
