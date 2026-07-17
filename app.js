@@ -414,12 +414,16 @@ function setupEventListeners() {
     }
   });
 
-  elements.loginStudentSelect.addEventListener('change', (e) => {
-    elements.customIdFields.classList.toggle('hidden', e.target.value !== 'Custom');
-  });
+  if (elements.loginStudentSelect) {
+    elements.loginStudentSelect.addEventListener('change', (e) => {
+      elements.customIdFields.classList.toggle('hidden', e.target.value !== 'Custom');
+    });
+  }
 
   // Bypass Login Action (registers on server db)
-  elements.googleLoginBtn.addEventListener('click', simulateGoogleLogin);
+  if (elements.googleLoginBtn) {
+    elements.googleLoginBtn.addEventListener('click', simulateGoogleLogin);
+  }
 
   elements.cardVeg.addEventListener('click', () => selectThali('veg'));
   elements.cardNonVeg.addEventListener('click', () => selectThali('nonveg'));
