@@ -445,6 +445,7 @@ function setupEventListeners() {
 
   elements.checkoutCloseBtn.addEventListener('click', () => {
     views.checkout.classList.add('hidden');
+    showView('menu');
   });
 
   // Tab switching
