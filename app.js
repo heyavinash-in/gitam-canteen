@@ -510,29 +510,12 @@ function setupEventListeners() {
   });
 }
 
-// --- Google Sign-in Bypass Flow (Saves to server) ---
 async function simulateGoogleLogin() {
-  const selectVal = elements.loginStudentSelect.value;
-  let identity = {};
-
-  if (selectVal === 'Custom') {
-    const name = elements.customNameInput.value.trim();
-    const roll = elements.customRollInput.value.trim();
-    const email = elements.customEmailInput.value.trim();
-
-    if (!name || !roll || !email) {
-      showToast('Please fill out all custom fields.', 'warning');
-      return;
-    }
-    identity = { name, email, picture: '' };
-  } else {
-    const selectedOption = elements.loginStudentSelect.options[elements.loginStudentSelect.selectedIndex];
-    identity = {
-      name: selectVal,
-      email: selectedOption.getAttribute('data-email'),
-      picture: ''
-    };
-  }
+  const identity = {
+    name: "Razorpay Reviewer",
+    email: "reviewer@gitam.edu",
+    picture: ""
+  };
 
   const originalHtml = elements.googleLoginBtn.innerHTML;
   elements.googleLoginBtn.disabled = true;
