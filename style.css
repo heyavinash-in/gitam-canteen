@@ -1928,3 +1928,152 @@ html {
   color: var(--text-primary);
   cursor: pointer;
 }
+
+/* ===== Google Pay Checkout UI ===== */
+.gpay-checkout-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 0 4px;
+}
+
+.gpay-info-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #4ade80;
+  background: rgba(74, 222, 128, 0.08);
+  border: 1px solid rgba(74, 222, 128, 0.2);
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+
+/* Native-style Google Pay button */
+.gpay-btn-native {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 16px;
+  border-radius: 50px;
+  border: none;
+  background: linear-gradient(135deg, #1a73e8 0%, #4285f4 100%);
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 700;
+  font-family: 'Outfit', sans-serif;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(26, 115, 232, 0.4);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  letter-spacing: 0.01em;
+}
+.gpay-btn-native:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 28px rgba(26, 115, 232, 0.55);
+}
+.gpay-btn-native:active {
+  transform: scale(0.98);
+}
+
+/* OR divider */
+.gpay-fallback-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.gpay-fallback-divider::before,
+.gpay-fallback-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(255,255,255,0.1);
+}
+
+/* Manual UPI row */
+.gpay-manual-row {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+.gpay-upi-block { display: flex; flex-direction: column; gap: 6px; }
+.gpay-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.gpay-copy-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.gpay-copy-row code {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  background: rgba(255,255,255,0.06);
+  padding: 4px 10px;
+  border-radius: 6px;
+  flex: 1;
+  letter-spacing: 0.02em;
+}
+.btn-copy-mini {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 6px;
+  padding: 6px 8px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  transition: background 0.15s;
+}
+.btn-copy-mini:hover { background: rgba(255,255,255,0.14); color: var(--text-primary); }
+
+/* UTR input section */
+.gpay-utr-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.utr-input-row {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+.utr-input {
+  flex: 1;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 10px;
+  padding: 12px 14px;
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  font-family: 'Outfit', monospace;
+  font-weight: 600;
+  outline: none;
+  transition: border-color 0.2s;
+  -moz-appearance: textfield;
+}
+.utr-input::-webkit-outer-spin-button,
+.utr-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.utr-input:focus {
+  border-color: var(--primary);
+  background: rgba(139, 92, 246, 0.08);
+}
+.utr-input-row .btn {
+  white-space: nowrap;
+  padding: 12px 16px;
+  font-size: 0.85rem;
+}
+

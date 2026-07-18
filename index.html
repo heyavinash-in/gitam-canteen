@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=25">
+  <link rel="stylesheet" href="style.css?v=28">
   
   <!-- PWA Support -->
   <link rel="manifest" href="manifest.json">
@@ -177,69 +177,49 @@
           </div>
         </div>
 
-        <div class="payment-tabs">
-          <button class="pay-tab active" data-target="tab-upi">UPI App (Direct Link)</button>
-          <button class="pay-tab" data-target="tab-card">Credit / Debit Card</button>
-          <button class="pay-tab" data-target="tab-rzp">Razorpay Gateway</button>
-        </div>
-
-        <!-- Tab Content 1: Direct UPI Deep Link Trigger -->
-        <div id="tab-upi" class="tab-content active">
-          <div class="upi-instructions">
-            <p>Tap the button below to launch any installed UPI App (GPay, PhonePe, Paytm, BHIM) on your mobile device to complete payment.</p>
+        <!-- Google Pay Payment Section -->
+        <div class="gpay-checkout-container">
+          <div class="gpay-info-row">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            <span>Encrypted & Secure · Direct Bank Settlement</span>
           </div>
-          <div class="upi-actions-stack">
-            <button id="launch-upi-btn" class="btn btn-primary btn-block btn-lg">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-              Launch UPI Payment App
-            </button>
-            <div class="confirmation-section">
-              <p class="confirm-notice">After completing the payment, return here and tap verify to issue your coupon:</p>
-              <button id="verify-upi-btn" class="btn btn-outline btn-block">
-                Verify Payment Transfer
-              </button>
-            </div>
-          </div>
-        </div>
 
-        <!-- Tab Content 2: Credit/Debit Card Form -->
-        <div id="tab-card" class="tab-content">
-          <form id="card-payment-form" onsubmit="event.preventDefault();">
-            <div class="form-group">
-              <label for="card-num">Card Number</label>
-              <input type="text" id="card-num" placeholder="4111 2222 3333 4444" maxlength="19" required>
-            </div>
-            <div class="form-row">
-              <div class="form-group col">
-                <label for="card-expiry">Expiry Date</label>
-                <input type="text" id="card-expiry" placeholder="MM/YY" maxlength="5" required>
-              </div>
-              <div class="form-group col">
-                <label for="card-cvv">CVV</label>
-                <input type="password" id="card-cvv" placeholder="123" maxlength="3" required>
-              </div>
-            </div>
-            <button type="submit" id="card-pay-submit" class="btn btn-primary btn-block" style="margin-top:12px;">Pay Securely</button>
-          </form>
-        </div>
-
-        <!-- Tab Content 3: Razorpay Gateway SDK -->
-        <div id="tab-rzp" class="tab-content">
-          <div class="gateway-instruction-card">
-            <div class="rzp-shield-badge">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
-              <span>Razorpay Secure Checkout</span>
-            </div>
-            <p>Pay securely via Razorpay's overlay supporting all options: UPI, Card, Net Banking, and Wallets.</p>
-          </div>
-          <button id="checkout-rzp-pay-btn" class="btn btn-primary btn-block btn-lg">
-            Pay with Razorpay Gateway
+          <!-- GPay Native Button -->
+          <button id="gpay-pay-btn" class="gpay-btn-native">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12.545 10.239v3.821h5.445c-.712 2.315-2.647 3.972-5.445 3.972a6.033 6.033 0 1 1 0-12.064c1.498 0 2.866.549 3.921 1.453l2.814-2.814A9.969 9.969 0 0 0 12.545 2C7.021 2 2.543 6.477 2.543 12s4.478 10 10.002 10c8.396 0 10.249-7.85 9.426-11.748l-9.426-.013z"/></svg>
+            Pay ₹<span id="gpay-amount-display">60</span> with Google Pay
           </button>
+
+          <!-- Fallback UPI QR + copy option -->
+          <div class="gpay-fallback-divider">
+            <span>OR pay manually if button above doesn't work</span>
+          </div>
+
+          <div class="gpay-manual-row">
+            <div class="gpay-upi-block">
+              <span class="gpay-label">UPI ID</span>
+              <div class="gpay-copy-row">
+                <code id="gpay-upi-display">avifact333-1@oksbi</code>
+                <button id="gpay-copy-upi-btn" class="btn-copy-mini" title="Copy UPI ID">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- UTR Verification -->
+          <div class="gpay-utr-section">
+            <label for="utr-input" class="gpay-label">After paying, enter your 12-digit UPI Ref No (UTR):</label>
+            <div class="utr-input-row">
+              <input type="number" id="utr-input" class="utr-input" placeholder="e.g. 639201948372" maxlength="12">
+              <button id="utr-verify-btn" class="btn btn-primary">Verify & Get Coupon</button>
+            </div>
+          </div>
         </div>
 
         <div class="modal-footer">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="lock-icon"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-          Direct College Settlement. $0 Platform Fees.
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="lock-icon"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          Direct College Settlement. ₹0 Platform Fees.
         </div>
       </div>
     </section>
@@ -490,6 +470,6 @@
   <div id="toast-container" class="toast-container"></div>
 
   <!-- Main JavaScript File -->
-  <script src="app.js?v=25"></script>
+  <script src="app.js?v=28"></script>
 </body>
 </html>

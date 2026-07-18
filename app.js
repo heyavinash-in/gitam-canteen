@@ -62,18 +62,16 @@ const elements = {
   checkoutCloseBtn: document.getElementById('checkout-close-btn'),
   checkoutItemName: document.getElementById('checkout-item-name'),
   checkoutItemPrice: document.getElementById('checkout-item-price'),
-  checkoutRzpPayBtn: document.getElementById('checkout-rzp-pay-btn'),
   paymentProcessingLoader: document.getElementById('payment-processing-loader'),
   loaderProgress: document.getElementById('loader-progress'),
   paymentSuccessOverlay: document.getElementById('payment-success-overlay'),
-  payTabs: document.querySelectorAll('.pay-tab'),
-  tabContents: document.querySelectorAll('.tab-content'),
-  launchUpiBtn: document.getElementById('launch-upi-btn'),
-  verifyUpiBtn: document.getElementById('verify-upi-btn'),
-  cardPaymentForm: document.getElementById('card-payment-form'),
-  cardNum: document.getElementById('card-num'),
-  cardExpiry: document.getElementById('card-expiry'),
-  cardCvv: document.getElementById('card-cvv'),
+  // Google Pay + UTR
+  gpayPayBtn: document.getElementById('gpay-pay-btn'),
+  gpayAmountDisplay: document.getElementById('gpay-amount-display'),
+  gpayUpiDisplay: document.getElementById('gpay-upi-display'),
+  gpayCopyUpiBtn: document.getElementById('gpay-copy-upi-btn'),
+  utrInput: document.getElementById('utr-input'),
+  utrVerifyBtn: document.getElementById('utr-verify-btn'),
 
   // Coupon Elements
   mealTicket: document.getElementById('meal-ticket'),
@@ -467,31 +465,25 @@ function setupEventListeners() {
     showView('menu');
   });
 
-  // Tab switching
-  elements.payTabs.forEach(tab => {
-    tab.addEventListener('click', () => {
-      elements.payTabs.forEach(t => t.classList.remove('active'));
-      elements.tabContents.forEach(c => c.classList.remove('active'));
-      
-      tab.classList.add('active');
-      const target = tab.getAttribute('data-target');
-      document.getElementById(target).classList.add('active');
+  // Google Pay Payment Request API
+  if (elements.gpayPayBtn) {
+    elements.gpayPayBtn.addEventListener('click', triggerGooglePay);
+  }
+
+  // Copy UPI ID
+  if (elements.gpayCopyUpiBtn) {
+    elements.gpayCopyUpiBtn.addEventListener('click', () => {
+      const upi = elements.gpayUpiDisplay ? elements.gpayUpiDisplay.textContent : 'avifact333-1@oksbi';
+      navigator.clipboard.writeText(upi).then(() => {
+        showToast('UPI ID copied! Open Google Pay / PhonePe and paste it.', 'success');
+      }).catch(() => showToast('Copy failed. UPI ID: ' + upi, 'info'));
     });
-  });
+  }
 
-  // UPI deep link & verify
-  elements.launchUpiBtn.addEventListener('click', triggerMobileUPIApp);
-  elements.verifyUpiBtn.addEventListener('click', verifyDirectUPITransfer);
-
-  // Card Payment submit
-  elements.cardPaymentForm.addEventListener('submit', handleCardPaymentSubmit);
-
-  // Input Formatters
-  elements.cardNum.addEventListener('input', formatCardNumber);
-  elements.cardExpiry.addEventListener('input', formatExpiryDate);
-
-  // Call Razorpay Order APIs
-  elements.checkoutRzpPayBtn.addEventListener('click', createRazorpayOrder);
+  // UTR Verification
+  if (elements.utrVerifyBtn) {
+    elements.utrVerifyBtn.addEventListener('click', verifyUTRAndIssueCoupon);
+  }
 
   elements.viewActiveCouponBtn.addEventListener('click', () => {
     if (state.coupon) showView('coupon');
@@ -548,6 +540,167 @@ async function simulateGoogleLogin() {
   } finally {
     elements.googleLoginBtn.disabled = false;
     elements.googleLoginBtn.innerHTML = originalHtml;
+  }
+}
+
+// --- Google Pay Payment Request API ---
+async function triggerGooglePay() {
+  if (!state.selectedThali) return;
+
+  const amount = state.selectedThali.price.toString();
+  const thaliName = state.selectedThali.type;
+
+  // Update the amount display
+  if (elements.gpayAmountDisplay) elements.gpayAmountDisplay.textContent = amount;
+
+  // Check if Payment Request API is available
+  if (!window.PaymentRequest) {
+    showToast('Google Pay not available on this browser. Please use the UPI ID below to pay manually.', 'warning');
+    return;
+  }
+
+  // Load config for payee UPI from server
+  const config = await fetch('/api/config/load').then(r => r.json()).catch(() => ({}));
+  const payeeUpi = config.payee_upi || 'avifact333-1@oksbi';
+  const payeeName = config.payee_name || 'GITAM Canteen';
+
+  // Update UPI display
+  if (elements.gpayUpiDisplay) elements.gpayUpiDisplay.textContent = payeeUpi;
+
+  // Build Google Pay payment method data (UPI via Payment Request API)
+  const methodData = [{
+    supportedMethods: 'https://tez.google.com/pay',   // Google Pay India (Tez)
+    data: {
+      pa: payeeUpi,           // UPI VPA (payee address)
+      pn: payeeName,          // Payee name
+      tr: `GITAM-${Date.now()}`,   // Transaction ref
+      url: window.location.href,
+      mc: '5812',             // Merchant category: eating places
+      tn: `${thaliName} - GITAM Canteen`,
+    }
+  }, {
+    supportedMethods: 'https://google.com/pay',  // Google Pay global fallback
+    data: {
+      environment: 'TEST',
+      apiVersion: 2,
+      apiVersionMinor: 0,
+      merchantInfo: { merchantName: 'GITAM Canteen' },
+      allowedPaymentMethods: [{
+        type: 'UPI',
+        parameters: { payeeVpa: payeeUpi, payeeName: payeeName },
+        tokenizationSpecification: { type: 'DIRECT' }
+      }]
+    }
+  }];
+
+  const details = {
+    total: {
+      label: `${thaliName} - GITAM Canteen`,
+      amount: { currency: 'INR', value: amount }
+    }
+  };
+
+  try {
+    showToast('Opening Google Pay...', 'info');
+    const request = new PaymentRequest(methodData, details);
+    const canPay = await request.canMakePayment();
+
+    if (!canPay) {
+      showToast('Google Pay not set up on this device. Please use the UPI ID below to pay manually, then enter your UTR.', 'warning');
+      return;
+    }
+
+    const paymentResponse = await request.show();
+    await paymentResponse.complete('success');
+
+    // Extract UTR from response if available
+    const utrFromResponse = paymentResponse.details?.upiTransactionId
+      || paymentResponse.details?.transactionId
+      || '';
+
+    if (utrFromResponse && elements.utrInput) {
+      elements.utrInput.value = utrFromResponse;
+      showToast('Payment done! Auto-filled your UTR. Tap "Verify & Get Coupon".', 'success');
+    } else {
+      showToast('Payment successful! Now enter your UTR number below to get your coupon.', 'success');
+    }
+
+  } catch (err) {
+    if (err.name === 'AbortError') {
+      showToast('Payment cancelled.', 'info');
+    } else {
+      console.error('GPay error:', err);
+      showToast('Could not open Google Pay. Please pay manually using the UPI ID below.', 'warning');
+    }
+  }
+}
+
+// --- UTR (UPI Ref No) Verification & Coupon Issuance ---
+async function verifyUTRAndIssueCoupon() {
+  if (!state.selectedThali || !state.user) return;
+
+  const utr = elements.utrInput ? elements.utrInput.value.trim() : '';
+  if (!utr || utr.length < 10 || utr.length > 12) {
+    showToast('Please enter a valid 12-digit UPI Ref No (UTR) from your payment receipt.', 'warning');
+    return;
+  }
+
+  const btn = elements.utrVerifyBtn;
+  const originalText = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner" style="width:18px;height:18px;border-width:2px;margin:0 auto;"></div>';
+
+  try {
+    const res = await fetch('/api/payment/register-pending', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: state.user.email,
+        name: state.user.name,
+        thali: state.selectedThali.type,
+        amount: state.selectedThali.price,
+        utr_ref: utr
+      })
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      showToast(err.error || 'Verification failed. Try again.', 'error');
+      return;
+    }
+
+    const data = await res.json();
+
+    // Build coupon state
+    state.coupon = {
+      id: data.transaction_id,
+      type: state.selectedThali.type,
+      price: state.selectedThali.price,
+      code: data.coupon_code,
+      status: 'active',
+      purchasedAt: new Date().toISOString(),
+      utr_ref: utr
+    };
+
+    saveDB();
+    renderCoupon(state.coupon);
+    showView('coupon');
+
+    // Play success animation
+    if (elements.paymentSuccessOverlay) {
+      elements.paymentSuccessOverlay.classList.remove('hidden');
+      setTimeout(() => elements.paymentSuccessOverlay.classList.add('hidden'), 3000);
+    }
+
+    showToast(`✅ Payment verified! Your ${state.selectedThali.type} coupon is ready.`, 'success');
+
+  } catch (err) {
+    console.error('UTR verify error:', err);
+    showToast('Server connection error. Please try again.', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = originalText;
+    if (elements.utrInput) elements.utrInput.value = '';
   }
 }
 
